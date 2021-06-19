@@ -46,8 +46,19 @@
 #define BLINKER_BLE
 #define BLINKER_MIOT_LIGHT
 
+#include <Adafruit_NeoPixel.h>
 #include <ArduinoJson.h>
 #include <Blinker.h>
+
+#ifdef __AVR__
+#include <avr/power.h>
+#endif
+
+// define
+#define PIN 8        // arduino control pin
+#define NUMPIXELS 30 // light numbers
+
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 BlinkerButton Button1("btn-switch");
 BlinkerNumber Number1("num-abc");
@@ -57,17 +68,24 @@ int counter = 0;
 void button1_callback(const String &state)
 {
     BLINKER_LOG("get button state: ", state);
+
+    String on = "on";
+    String off = "off";
     if (state == "on")
     {
         Button1.print("on");
 
         digitalWrite(LED_BUILTIN, LOW);
+
+        lightSwitch(on);
     }
     else if (state == "off")
     {
         Button1.print("off");
 
         digitalWrite(LED_BUILTIN, HIGH);
+
+        lightSwitch(off);
     }
 }
 
@@ -108,6 +126,12 @@ void setup()
 void loop()
 {
     Blinker.run();
+
+#if defined(__AVR__ATtiny85__) && (F_CPU == 16000000)
+    clock_prescale_set(clock_div_1);
+#endif
+
+    pixels.begin();
 }
 
 void parseJson(const String &json, String &key, String &value)
@@ -127,5 +151,26 @@ void parseJson(const String &json, String &key, String &value)
         key = p.key().c_str();
         value = p.value().as<char *>();
         return;
+    }
+}
+
+void lightSwitch(const String &state)
+{
+    BLINKER_LOG("light stat:", state);
+    if (state == "on")
+    {
+        for (int i = 0; i < NUMPIXELS; i++)
+        {
+
+            pixels.setPixelColor(i, pixels.Color(0, 150, 0));
+            pixels.show();
+        }
+    }
+    else if (state == "off")
+    {
+        pixels.clear();
+
+        // after emptying the lights, you need to use the show function to update
+        pixels.show();
     }
 }

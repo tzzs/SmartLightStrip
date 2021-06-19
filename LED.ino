@@ -45,6 +45,7 @@
 
 #define BLINKER_BLE
 
+#include <ArduinoJson.h>
 #include <Blinker.h>
 
 BlinkerButton Button1("btn-abc");
@@ -52,27 +53,59 @@ BlinkerNumber Number1("num-abc");
 
 int counter = 0;
 
-void button1_callback(const String & state)
+void button1_callback(const String &state)
 {
     BLINKER_LOG("get button state: ", state);
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
-void dataRead(const String & data)
+void dataRead(const String &data)
 {
+    String key;
+    String value;
+
     BLINKER_LOG("Blinker readString: ", data);
+
+    DynamicJsonDocument doc(200);
+    DeserializationError err = deserializeJson(doc, data);
+    if (err)
+    {
+        BLINKER_LOG("parse json error.");
+        BLINKER_LOG(err.f_str());
+        return;
+    }
+    // BLINKER_LOG(doc.to<JsonArray>());
+
+    JsonObject obj = doc.as<JsonObject>();
+    // BLINKER_LOG(obj.as<JsonArray>());
+
+    // JsonArray array = doc.as<JsonArray>();
+    // BLINKER_LOG(array);
+
+    // for (JsonPair p : obj)
+    // {
+    //     BLINKER_LOG("key:", p.key().c_str());
+    //     BLINKER_LOG("value:", p.value().as<char *>());
+    //     break;
+    // }
+
+    parseJson(data, key,value);
+    BLINKER_LOG("key:", key);
+    BLINKER_LOG("value:", value);
+
     counter++;
     Number1.print(counter);
 }
 
 void setup()
 {
+    /* 默认端口 BLE RX-3 TX-2 */
     Serial.begin(9600);
     BLINKER_DEBUG.stream(Serial);
-    
+
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
-    
+
     Blinker.begin();
     Blinker.attachData(dataRead);
 
@@ -82,4 +115,24 @@ void setup()
 void loop()
 {
     Blinker.run();
+}
+
+void parseJson(const String &json, String &key, String &value)
+{
+    DynamicJsonDocument doc(200);
+    DeserializationError err = deserializeJson(doc, json);
+    if (err)
+    {
+        BLINKER_LOG("parse json error.");
+        BLINKER_LOG(err.f_str());
+        return;
+    }
+
+    JsonObject obj = doc.as<JsonObject>();
+    for (JsonPair p : obj)
+    {
+        key = p.key().c_str();
+        value = p.value.as<char *>();
+        return;
+    }
 }

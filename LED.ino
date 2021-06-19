@@ -19,6 +19,8 @@
 #define PIN 8        // arduino control pin
 #define NUMPIXELS 30 // light numbers
 
+#define DEBOUNCEDELAY 50
+
 #define ON "on"
 #define OFF "off"
 
@@ -63,11 +65,18 @@ void dataRead(const String &data)
     String key;
     String value;
 
+    BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("Blinker readString: ", data);
 
     parseJson(data, key, value);
     BLINKER_LOG("key  : ", key);
     BLINKER_LOG("value: ", value);
+
+    if (key == "error")
+    {
+        BLINKER_LOG("processing error.");
+        return;
+    }
 
     if (key == COLORWHEEL)
     {
@@ -82,7 +91,6 @@ void dataRead(const String &data)
 
     counter++;
     Number1.print(counter);
-    delay(100);
 }
 
 void setup()
@@ -119,6 +127,7 @@ void parseJson(const String &json, String &key, String &value)
     {
         BLINKER_LOG("parse json error.");
         BLINKER_LOG(err.f_str());
+        key = "error";
         return;
     }
 

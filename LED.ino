@@ -66,29 +66,6 @@ void dataRead(const String &data)
 
     BLINKER_LOG("Blinker readString: ", data);
 
-    DynamicJsonDocument doc(200);
-    DeserializationError err = deserializeJson(doc, data);
-    if (err)
-    {
-        BLINKER_LOG("parse json error.");
-        BLINKER_LOG(err.f_str());
-        return;
-    }
-    // BLINKER_LOG(doc.to<JsonArray>());
-
-    JsonObject obj = doc.as<JsonObject>();
-    // BLINKER_LOG(obj.as<JsonArray>());
-
-    // JsonArray array = doc.as<JsonArray>();
-    // BLINKER_LOG(array);
-
-    // for (JsonPair p : obj)
-    // {
-    //     BLINKER_LOG("key:", p.key().c_str());
-    //     BLINKER_LOG("value:", p.value().as<char *>());
-    //     break;
-    // }
-
     parseJson(data, key,value);
     BLINKER_LOG("key:", key);
     BLINKER_LOG("value:", value);
@@ -132,7 +109,7 @@ void parseJson(const String &json, String &key, String &value)
     for (JsonPair p : obj)
     {
         key = p.key().c_str();
-        value = p.value.as<char *>();
+        value = p.value().as<char *>();
         return;
     }
 }

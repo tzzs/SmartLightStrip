@@ -1,5 +1,0 @@
-{
-    "board": "arduino:avr:nano",
-    "port": "COM3",
-    "sketch": "LED.ino"
-}

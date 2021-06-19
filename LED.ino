@@ -44,11 +44,12 @@
  * *****************************************************************/
 
 #define BLINKER_BLE
+#define BLINKER_MIOT_LIGHT
 
 #include <ArduinoJson.h>
 #include <Blinker.h>
 
-BlinkerButton Button1("btn-abc");
+BlinkerButton Button1("btn-switch");
 BlinkerNumber Number1("num-abc");
 
 int counter = 0;
@@ -56,7 +57,18 @@ int counter = 0;
 void button1_callback(const String &state)
 {
     BLINKER_LOG("get button state: ", state);
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    if (state == "on")
+    {
+        Button1.print("on");
+
+        digitalWrite(LED_BUILTIN, LOW);
+    }
+    else if (state == "off")
+    {
+        Button1.print("off");
+
+        digitalWrite(LED_BUILTIN, HIGH);
+    }
 }
 
 void dataRead(const String &data)
@@ -66,9 +78,13 @@ void dataRead(const String &data)
 
     BLINKER_LOG("Blinker readString: ", data);
 
-    parseJson(data, key,value);
-    BLINKER_LOG("key:", key);
-    BLINKER_LOG("value:", value);
+    parseJson(data, key, value);
+    BLINKER_LOG("key  : ", key);
+    BLINKER_LOG("value: ", value);
+
+    // if (key.compare("btn-switch") == 0){
+
+    // }
 
     counter++;
     Number1.print(counter);

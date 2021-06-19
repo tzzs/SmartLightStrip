@@ -21,7 +21,10 @@
 
 #define ON "on"
 #define OFF "off"
+
+#define SWITCH "switch"
 #define COLORWHEEL "colorWheel"
+#define BRIGHTNESS "brightness"
 
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
@@ -31,6 +34,7 @@ BlinkerNumber Number1("num-abc");
 int counter = 0;
 
 int color[4] = {255, 255, 255, 255}; // RGBW
+int brightness = 255;
 
 void button1_callback(const String &state)
 {
@@ -40,7 +44,7 @@ void button1_callback(const String &state)
     {
         Button1.print(ON);
 
-        digitalWrite(LED_BUILTIN, LOW);
+        digitalWrite(LED_BUILTIN, HIGH);
 
         lightSwitch(ON);
     }
@@ -48,7 +52,7 @@ void button1_callback(const String &state)
     {
         Button1.print(OFF);
 
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED_BUILTIN, LOW);
 
         lightSwitch(OFF);
     }
@@ -69,9 +73,16 @@ void dataRead(const String &data)
     {
         lightSwitch(ON);
     }
+    else if (key == BRIGHTNESS)
+    {
+        BLINKER_LOG("brightness2: ", brightness);
+        pixels.setBrightness(brightness);
+        pixels.show();
+    }
 
     counter++;
     Number1.print(counter);
+    delay(100);
 }
 
 void setup()
@@ -115,27 +126,28 @@ void parseJson(const String &json, String &key, String &value)
     for (JsonPair p : obj)
     {
         key = p.key().c_str();
-        value = p.value().as<char *>();
 
-        if (value == "")
+        if (key == SWITCH)
+        {
+
+            value = p.value().as<char *>();
+        }
+        else if (key == COLORWHEEL)
         {
             JsonArray arr = p.value().as<JsonArray>();
-            BLINKER_LOG(arr);
 
-            if (key == COLORWHEEL)
+            int i = 0;
+            for (JsonVariant v : arr)
             {
-                int i = 0;
-                for (JsonVariant v : arr)
-                {
-                    color[i++] = v.as<int>();
-                }
+                color[i++] = v.as<int>();
             }
-
-            // color[0] = arr[0];
-            // color[1] = arr[1];
-            // color[2] = arr[2];
-            // color[3] = arr[3];
         }
+        else if (key == BRIGHTNESS)
+        {
+            brightness = p.value().as<int>();
+            BLINKER_LOG("brightness:", brightness);
+        }
+
         return;
     }
 }

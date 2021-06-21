@@ -4,7 +4,7 @@
  * 
  * *****************************************************************/
 
-#define BLINKER_BLE
+#define BLINKER_WIFI
 #define BLINKER_MIOT_LIGHT
 
 #include <Adafruit_NeoPixel.h>
@@ -18,6 +18,10 @@
 // define
 #define PIN 8        // arduino control pin
 #define NUMPIXELS 30 // light numbers
+
+#define AUTH "a6f0f4ac1eee"
+#define SSID "Redmi_4ECD"
+#define PSWD "tanzhongzheng"
 
 #define DEBOUNCEDELAY 50
 
@@ -370,7 +374,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
 
-    Blinker.begin();
+    Blinker.begin(AUTH, SSID, PSWD);
     Blinker.attachData(dataRead);
 
     BlinkerMIOT.attachPowerState(miotPowerState);

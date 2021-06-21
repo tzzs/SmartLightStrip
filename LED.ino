@@ -16,14 +16,12 @@
 #endif
 
 // define
-#define PIN 8        // arduino control pin
+#define PIN D8       // arduino control pin
 #define NUMPIXELS 30 // light numbers
 
-#define AUTH "a6f0f4ac1eee"
-#define SSID "Redmi_4ECD"
-#define PSWD "tanzhongzheng"
-
-#define DEBOUNCEDELAY 50
+char auth[] = "a6f0f4ac1eee";
+char ssid[] = "Redmi_4ECD";
+char pswd[] = "tanzhongzheng";
 
 #define ON "on"
 #define OFF "off"
@@ -43,33 +41,38 @@ int counter = 0;
 
 int color[4] = {255, 255, 255, 255};   // RGBW note: W was not used in ws2812B.
 int brightness = 255;                  // 亮度
-bool wsState;                          // ligth state
+bool wsState = true;                   // ligth state
 uint8_t wsMode = BLINKER_CMD_MIOT_DAY; // light mode
 
-uint8_t colorR, colorG, colorB, colorW;
+uint8_t colorR = 255, colorG = 255, colorB = 255, colorW = 255;
 uint32_t color32;
 
 BlinkerRGB WS2812(RGB_1);
 
 void button1_callback(const String &state)
 {
+    BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("get button state: ", state);
 
     if (state == ON)
     {
         Button1.print(ON);
 
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED_BUILTIN, LOW);
 
         lightSwitch(ON);
+
+        digitalWrite(5, HIGH);
     }
     else if (state == OFF)
     {
         Button1.print(OFF);
 
-        digitalWrite(LED_BUILTIN, LOW);
+        digitalWrite(LED_BUILTIN, HIGH);
 
         lightSwitch(OFF);
+
+        digitalWrite(5, LOW);
     }
 }
 
@@ -127,6 +130,7 @@ void parseJson(const String &json, String &key, String &value)
 
 void lightSwitch(const String &state)
 {
+    BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("light stat:", state);
     if (state == ON)
     {
@@ -155,6 +159,7 @@ void pixelShow()
 
 void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
 {
+    BLINKER_LOG("----------------------------------------------------------------");
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     BLINKER_LOG("R value: ", r_value);
     BLINKER_LOG("G value: ", g_value);
@@ -370,32 +375,35 @@ void setup()
     /* 默认端口 BLE RX-3 TX-2 */
     Serial.begin(9600);
     BLINKER_DEBUG.stream(Serial);
+    // BLINKER_DEBUG.debugAll();
 
+    BLINKER_LOG("pixels config");
+    pixels.begin();
+    // pixels.setBrightness(colorW);
+    WS2812.attach(ws2812_callback);
+    // pixels.show();
+    // pixelShow();
+
+    BLINKER_LOG("build in led config");
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
 
-    Blinker.begin(AUTH, SSID, PSWD);
+    // pinMode(5, OUTPUT);
+    // digitalWrite(5, HIGH);
+
+    // config wifi
+    BLINKER_LOG("config wifi");
+    Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
 
     BlinkerMIOT.attachPowerState(miotPowerState);
-    BlinkerMIOT.attachColor(miotColor);
-    BlinkerMIOT.attachMode(miotMode);
-    BlinkerMIOT.attachBrightness(miotBright);
-    BlinkerMIOT.attachColorTemperature(miotColorTemp);
-    BlinkerMIOT.attachQuery(miotQuery);
+    // BlinkerMIOT.attachColor(miotColor);
+    // BlinkerMIOT.attachMode(miotMode);
+    // BlinkerMIOT.attachBrightness(miotBright);
+    // BlinkerMIOT.attachColorTemperature(miotColorTemp);
+    // BlinkerMIOT.attachQuery(miotQuery);
 
     Button1.attach(button1_callback);
-
-    colorR = 255;
-    colorG = 255;
-    colorB = 255;
-    colorW = 0;
-    wsState = true;
-
-    pixels.begin();
-    pixels.setBrightness(colorW);
-    WS2812.attach(ws2812_callback);
-    pixelShow();
 }
 
 void loop()

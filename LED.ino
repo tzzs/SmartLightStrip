@@ -33,26 +33,27 @@ char pswd[] = "tanzhongzheng"; // wifi password
 #define COLORWHEEL "colorWheel"
 #define BRIGHTNESS "brightness"
 
-#define RGB_1 "RGBKey"
+#define RGB_1 "colorWheel"
 
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-BlinkerButton Button1("btn-switch");
-BlinkerNumber Number1("num-abc");
-
+BlinkerButton Switch("btn-switch");  // 灯带开关
+BlinkerNumber Number1("num-abc");    //
+BlinkerSlider Slider1("brightness"); // 亮度滑条
+BlinkerRGB WS2812(RGB_1);            // 颜色亮度
 
 int counter = 0;
 
-int color[4] = {255, 255, 255, 255};   // RGBW note: W was not used in ws2812B.
-int brightness = 255;                  // 亮度
+int color[4] = {255, 255, 255, 255};   // RGBW note: W is brightness in ws2812B.
 bool wsState = true;                   // ligth state
 uint8_t wsMode = BLINKER_CMD_MIOT_DAY; // light mode
 
 uint8_t colorR = 255, colorG = 255, colorB = 255, colorW = 255;
 uint32_t color32;
 
-BlinkerRGB WS2812(RGB_1);
-
+/**
+ * 开关控制回调函数
+ */
 void button1_callback(const String &state)
 {
     BLINKER_LOG("----------------------------------------------------------------");
@@ -60,7 +61,7 @@ void button1_callback(const String &state)
 
     if (state == ON)
     {
-        Button1.print(ON);
+        Switch.print(ON);
 
         digitalWrite(LED_BUILTIN, LOW);
 
@@ -70,7 +71,7 @@ void button1_callback(const String &state)
     }
     else if (state == OFF)
     {
-        Button1.print(OFF);
+        Switch.print(OFF);
 
         digitalWrite(LED_BUILTIN, HIGH);
 
@@ -78,6 +79,47 @@ void button1_callback(const String &state)
 
         digitalWrite(5, LOW);
     }
+}
+
+/**
+ * 亮度控制回调函数
+ */
+void slider1_callback(const int32_t value)
+{
+    BLINKER_LOG("----------------------------------------------------------------");
+    BLINKER_LOG("get slider value: ", value);
+
+    colorW = value * 2.55;
+
+    BLINKER_LOG("color: ", colorW);
+
+    colorW = colorW > 5 ? colorW : 5;
+
+    pixelShow();
+
+    WS2812.print(colorR, colorG, colorB, colorW);
+}
+
+/**
+ * 灯带回调函数
+ */
+void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
+{
+    BLINKER_LOG("----------------------------------------------------------------");
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    BLINKER_LOG("R value: ", r_value);
+    BLINKER_LOG("G value: ", g_value);
+    BLINKER_LOG("B value: ", b_value);
+    BLINKER_LOG("Rrightness value: ", bright_value);
+
+    colorR = r_value;
+    colorG = g_value;
+    colorB = b_value;
+    colorW = bright_value > 5 ? bright_value : 5;
+
+    pixelShow();
+
+    Slider1.print((int)(colorW / 2.55));
 }
 
 /**
@@ -119,12 +161,11 @@ void parseJson(const String &json, String &key, String &value)
             colorG = color[1];
             colorB = color[2];
             colorW = color[3];
-            brightness = color[3];
         }
         else if (key == BRIGHTNESS)
         {
-            brightness = p.value().as<int>();
-            BLINKER_LOG("brightness:", brightness);
+            colorW = p.value().as<int>() * 255 / 100;
+            BLINKER_LOG("brightness:", colorW);
         }
 
         return;
@@ -136,7 +177,7 @@ void parseJson(const String &json, String &key, String &value)
  */
 void lightSwitch(const String &state)
 {
-    BLINKER_LOG("----------------------------------------------------------------");
+    // BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("light stat:", state);
     if (state == ON)
     {
@@ -166,26 +207,6 @@ void pixelShow()
     pixels.show();
 }
 
-/**
- * 灯带回调函数
- */
-void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
-{
-    BLINKER_LOG("----------------------------------------------------------------");
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    BLINKER_LOG("R value: ", r_value);
-    BLINKER_LOG("G value: ", g_value);
-    BLINKER_LOG("B value: ", b_value);
-    BLINKER_LOG("Rrightness value: ", bright_value);
-
-    colorR = r_value;
-    colorG = g_value;
-    colorB = b_value;
-    colorW = bright_value;
-
-    pixelShow();
-}
-
 uint32_t getColor()
 {
     return colorR << 16 | colorG << 8 | colorB;
@@ -198,11 +219,13 @@ uint32_t getColor()
  * *****************************************************************/
 void miotPowerState(const String &state)
 {
+    BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("need set power state: ", state);
 
     if (state == BLINKER_CMD_ON)
     {
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED_BUILTIN, LOW);
+        Switch.print(ON);
 
         BlinkerMIOT.powerState(ON);
         BlinkerMIOT.print();
@@ -213,12 +236,11 @@ void miotPowerState(const String &state)
             colorW = 255;
 
         lightSwitch(ON);
-
-        Button1.print(ON);
     }
     else if (state == BLINKER_CMD_OFF)
     {
-        digitalWrite(LED_BUILTIN, LOW);
+        digitalWrite(LED_BUILTIN, HIGH);
+        Switch.print(OFF);
 
         BlinkerMIOT.powerState(OFF);
         BlinkerMIOT.print();
@@ -228,8 +250,6 @@ void miotPowerState(const String &state)
         colorW = 0;
 
         lightSwitch(OFF);
-
-        Button1.print(OFF);
     }
 }
 
@@ -238,6 +258,7 @@ void miotPowerState(const String &state)
  */
 void miotColor(int32_t color)
 {
+    BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("need set color: ", color);
 
     colorR = color >> 16 & 0xFF;
@@ -247,6 +268,8 @@ void miotColor(int32_t color)
     BLINKER_LOG("colorR: ", colorR, ", colorG: ", colorG, ", colorB: ", colorB);
 
     pixelShow();
+
+    WS2812.print(colorR, colorG, colorB, colorW);
 
     BlinkerMIOT.color(color);
     BlinkerMIOT.print();
@@ -299,12 +322,20 @@ void miotMode(uint8_t mode)
  */
 void miotBright(const String &bright)
 {
+    BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("need set brightness: ", bright);
 
+    // update ligth strip
     colorW = bright.toInt();
+    // prevent the brightness from being too low
+    colorW = colorW > 5 ? colorW : 5;
+    pixelShow();
+
+    // update app layout
+    Slider1.print(colorW);
+    WS2812.print(colorR, colorG, colorB, colorW);
 
     BLINKER_LOG("now set brightness: ", colorW);
-
     BlinkerMIOT.brightness(colorW);
     BlinkerMIOT.print();
 }
@@ -314,6 +345,7 @@ void miotBright(const String &bright)
  */
 void miotColorTemp(int32_t colorTemp)
 {
+    BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("need set colorTemperature: ", colorTemp);
 
     int32_t colorT = colorTemp;
@@ -327,22 +359,29 @@ void miotColorTemp(int32_t colorTemp)
  */
 void miotQuery(int32_t queryCode)
 {
+    BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("MIOT Query codes: ", queryCode);
 
     switch (queryCode)
     {
-    case BLINKER_CMD_QUERY_POWERSTATE_NUMBER:
+    case BLINKER_CMD_QUERY_ALL_NUMBER: // 0
+        BlinkerMIOT.powerState(wsState ? ON : OFF);
+        BlinkerMIOT.color(getColor());
+        BlinkerMIOT.mode(wsMode);
+        BlinkerMIOT.brightness(colorW);
+        break;
+    case BLINKER_CMD_QUERY_POWERSTATE_NUMBER: // 1
         BlinkerMIOT.powerState(wsState ? ON : OFF);
         break;
-    case BLINKER_CMD_QUERY_COLOR_NUMBER:
+    case BLINKER_CMD_QUERY_COLOR_NUMBER: // 2
         BlinkerMIOT.color(getColor());
         break;
-    case BLINKER_CMD_QUERY_MODE_NUMBER:
+    case BLINKER_CMD_QUERY_MODE_NUMBER: // 3
         BlinkerMIOT.mode(wsMode);
         break;
-    case BLINKER_CMD_QUERY_COLORTEMP_NUMBER:
+    case BLINKER_CMD_QUERY_COLORTEMP_NUMBER: // 4
         break;
-    case BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER:
+    case BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER: // 5
         BlinkerMIOT.brightness(colorW);
         break;
     default:
@@ -376,13 +415,16 @@ void dataRead(const String &data)
 
     if (key == COLORWHEEL)
     {
+        colorW = colorW > 5 ? colorW : 5;
         lightSwitch(ON);
+        Slider1.print(colorW / 2.55);
     }
     else if (key == BRIGHTNESS)
     {
-        BLINKER_LOG("brightness2: ", brightness);
-        pixels.setBrightness(brightness);
+        BLINKER_LOG("brightness2: ", colorW);
+        pixels.setBrightness(colorW);
         pixels.show();
+        WS2812.print(colorR, colorG, colorB, colorW);
     }
 
     counter++;
@@ -399,7 +441,6 @@ void setup()
     BLINKER_LOG("pixels config");
     pixels.begin();
     // pixels.setBrightness(colorW);
-    WS2812.attach(ws2812_callback);
     // pixels.show();
     // pixelShow();
 
@@ -415,6 +456,7 @@ void setup()
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
 
+    // register MIOT feedback function
     BlinkerMIOT.attachPowerState(miotPowerState);
     BlinkerMIOT.attachColor(miotColor);
     BlinkerMIOT.attachMode(miotMode);
@@ -422,7 +464,15 @@ void setup()
     BlinkerMIOT.attachColorTemperature(miotColorTemp);
     BlinkerMIOT.attachQuery(miotQuery);
 
-    Button1.attach(button1_callback);
+    // bind UI callback function
+    Switch.attach(button1_callback);
+    WS2812.attach(ws2812_callback);
+    Slider1.attach(slider1_callback);
+
+    // initialize the UI state
+    Switch.print(ON);
+    WS2812.print(colorR, colorG, colorB, colorW);
+    Slider1.print(colorW / 2.55);
 }
 
 void loop()

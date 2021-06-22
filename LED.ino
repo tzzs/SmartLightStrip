@@ -4,6 +4,17 @@
  * 
  * *****************************************************************/
 
+/*******************************CONFIG******************************/
+
+#define PIN D8       // arduino control pin
+#define NUMPIXELS 30 // light numbers
+
+char auth[] = "a6f0f4ac1eee";
+char ssid[] = "Redmi_4ECD";    // wifi ssid/name
+char pswd[] = "tanzhongzheng"; // wifi password
+
+/* *****************************************************************/
+
 #define BLINKER_WIFI
 #define BLINKER_MIOT_LIGHT
 
@@ -14,14 +25,6 @@
 #ifdef __AVR__
 #include <avr/power.h>
 #endif
-
-// define
-#define PIN D8       // arduino control pin
-#define NUMPIXELS 30 // light numbers
-
-char auth[] = "a6f0f4ac1eee";
-char ssid[] = "Redmi_4ECD";
-char pswd[] = "tanzhongzheng";
 
 #define ON "on"
 #define OFF "off"
@@ -36,6 +39,7 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 BlinkerButton Button1("btn-switch");
 BlinkerNumber Number1("num-abc");
+
 
 int counter = 0;
 
@@ -78,7 +82,6 @@ void button1_callback(const String &state)
 
 /**
  * Blinker数据解析
- * 
  */
 void parseJson(const String &json, String &key, String &value)
 {
@@ -128,6 +131,9 @@ void parseJson(const String &json, String &key, String &value)
     }
 }
 
+/**
+ * 开关控制
+ */
 void lightSwitch(const String &state)
 {
     BLINKER_LOG("----------------------------------------------------------------");
@@ -145,6 +151,9 @@ void lightSwitch(const String &state)
     }
 }
 
+/**
+ * 颜色更新
+ */
 void pixelShow()
 {
     BLINKER_LOG("COLOR:", colorR, " ", colorG, " ", colorB, " BRIGHTNESS:", colorW);
@@ -157,6 +166,9 @@ void pixelShow()
     pixels.show();
 }
 
+/**
+ * 灯带回调函数
+ */
 void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
 {
     BLINKER_LOG("----------------------------------------------------------------");
@@ -179,11 +191,11 @@ uint32_t getColor()
     return colorR << 16 | colorG << 8 | colorB;
 }
 
-/**
+/* *****************************************************************
  * 
  * MIOT 回调函数
  * 
- */
+ * *****************************************************************/
 void miotPowerState(const String &state)
 {
     BLINKER_LOG("need set power state: ", state);
@@ -201,6 +213,8 @@ void miotPowerState(const String &state)
             colorW = 255;
 
         lightSwitch(ON);
+
+        Button1.print(ON);
     }
     else if (state == BLINKER_CMD_OFF)
     {
@@ -214,6 +228,8 @@ void miotPowerState(const String &state)
         colorW = 0;
 
         lightSwitch(OFF);
+
+        Button1.print(OFF);
     }
 }
 
@@ -337,6 +353,9 @@ void miotQuery(int32_t queryCode)
     BlinkerMIOT.print();
 }
 
+/**
+ * APP数据读取
+ */
 void dataRead(const String &data)
 {
     String key;
@@ -397,11 +416,11 @@ void setup()
     Blinker.attachData(dataRead);
 
     BlinkerMIOT.attachPowerState(miotPowerState);
-    // BlinkerMIOT.attachColor(miotColor);
-    // BlinkerMIOT.attachMode(miotMode);
-    // BlinkerMIOT.attachBrightness(miotBright);
-    // BlinkerMIOT.attachColorTemperature(miotColorTemp);
-    // BlinkerMIOT.attachQuery(miotQuery);
+    BlinkerMIOT.attachColor(miotColor);
+    BlinkerMIOT.attachMode(miotMode);
+    BlinkerMIOT.attachBrightness(miotBright);
+    BlinkerMIOT.attachColorTemperature(miotColorTemp);
+    BlinkerMIOT.attachQuery(miotQuery);
 
     Button1.attach(button1_callback);
 }

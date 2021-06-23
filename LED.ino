@@ -9,9 +9,9 @@
 #define PIN D8       // arduino control pin
 #define NUMPIXELS 30 // light numbers
 
-char auth[] = "a6f0f4ac1eee";
+char auth[] = "";
 char ssid[] = "Redmi_4ECD";    // wifi ssid/name
-char pswd[] = "tanzhongzheng"; // wifi password
+char pswd[] = ""; // wifi password
 
 /* *****************************************************************/
 
@@ -333,7 +333,7 @@ void miotBright(const String &bright)
 
     // update app layout
     Slider1.print(colorW);
-    WS2812.print(colorR, colorG, colorB, colorW);
+    WS2812.print(colorR, colorG, colorB, (int)(colorW * 2.55));
 
     BLINKER_LOG("now set brightness: ", colorW);
     BlinkerMIOT.brightness(colorW);
@@ -472,7 +472,7 @@ void setup()
     // initialize the UI state
     Switch.print(ON);
     WS2812.print(colorR, colorG, colorB, colorW);
-    Slider1.print(colorW / 2.55);
+    Slider1.print((int)(colorW / 2.55));
 }
 
 void loop()

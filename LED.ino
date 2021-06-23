@@ -32,17 +32,13 @@ char pswd[] = ""; // wifi password
 #define SWITCH "switch"
 #define COLORWHEEL "colorWheel"
 #define BRIGHTNESS "brightness"
-
 #define RGB_1 "colorWheel"
 
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 BlinkerButton Switch("btn-switch");  // 灯带开关
-BlinkerNumber Number1("num-abc");    //
 BlinkerSlider Slider1("brightness"); // 亮度滑条
 BlinkerRGB WS2812(RGB_1);            // 颜色亮度
-
-int counter = 0;
 
 int color[4] = {255, 255, 255, 255};   // RGBW note: W is brightness in ws2812B.
 bool wsState = true;                   // ligth state
@@ -426,9 +422,6 @@ void dataRead(const String &data)
         pixels.show();
         WS2812.print(colorR, colorG, colorB, colorW);
     }
-
-    counter++;
-    Number1.print(counter);
 }
 
 void setup()

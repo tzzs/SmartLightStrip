@@ -318,21 +318,23 @@ void miotMode(uint8_t mode)
  */
 void miotBright(const String &bright)
 {
+    int brightTmp;
     BLINKER_LOG("----------------------------------------------------------------");
     BLINKER_LOG("need set brightness: ", bright);
 
     // update ligth strip
-    colorW = bright.toInt();
+    brightTmp = bright.toInt();
     // prevent the brightness from being too low
-    colorW = colorW > 5 ? colorW : 5;
+    brightTmp = brightTmp > 5 ? brightTmp : 5;
+    colorW = (int)(brightTmp * 2.55);
     pixelShow();
 
     // update app layout
-    Slider1.print(colorW);
-    WS2812.print(colorR, colorG, colorB, (int)(colorW * 2.55));
+    Slider1.print(brightTmp);
+    WS2812.print(colorR, colorG, colorB, colorW);
 
-    BLINKER_LOG("now set brightness: ", colorW);
-    BlinkerMIOT.brightness(colorW);
+    BLINKER_LOG("now set brightness: ", brightTmp);
+    BlinkerMIOT.brightness(brightTmp);
     BlinkerMIOT.print();
 }
 
@@ -413,7 +415,7 @@ void dataRead(const String &data)
     {
         colorW = colorW > 5 ? colorW : 5;
         lightSwitch(ON);
-        Slider1.print(colorW / 2.55);
+        Slider1.print((int)(colorW / 2.55));
     }
     else if (key == BRIGHTNESS)
     {
@@ -424,12 +426,20 @@ void dataRead(const String &data)
     }
 }
 
+void heartbeat()
+{
+    BLINKER_LOG("################################################################");
+    Switch.print(wsState ? ON : OFF);
+    Slider1.print((int)(colorW / 2.55));
+    WS2812.print(colorR, colorG, colorB, colorW);
+}
+
 void setup()
 {
     /* 默认端口 BLE RX-3 TX-2 */
     Serial.begin(9600);
     BLINKER_DEBUG.stream(Serial);
-    // BLINKER_DEBUG.debugAll();
+    BLINKER_DEBUG.debugAll();
 
     BLINKER_LOG("pixels config");
     pixels.begin();
@@ -448,6 +458,7 @@ void setup()
     BLINKER_LOG("config wifi");
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
+    Blinker.attachHeartbeat(heartbeat);
 
     // register MIOT feedback function
     BlinkerMIOT.attachPowerState(miotPowerState);

@@ -64,6 +64,8 @@ void button1_callback(const String &state)
         lightSwitch(ON);
 
         digitalWrite(5, HIGH);
+
+        wsState = true;
     }
     else if (state == OFF)
     {
@@ -74,6 +76,8 @@ void button1_callback(const String &state)
         lightSwitch(OFF);
 
         digitalWrite(5, LOW);
+
+        wsState = false;
     }
 }
 
@@ -193,14 +197,26 @@ void lightSwitch(const String &state)
  */
 void pixelShow()
 {
-    BLINKER_LOG("COLOR:", colorR, " ", colorG, " ", colorB, " BRIGHTNESS:", colorW);
-    pixels.setBrightness(colorW);
-    for (int i = 0; i < NUMPIXELS; i++)
+    BLINKER_LOG("pixelShow wsState: ", wsState);
+    if (wsState)
     {
-        // GRB
-        pixels.setPixelColor(i, pixels.Color(colorR, colorG, colorB));
+        BLINKER_LOG("COLOR:", colorR, " ", colorG, " ", colorB, " BRIGHTNESS:", colorW);
+        pixels.setBrightness(colorW);
+        for (int i = 0; i < NUMPIXELS; i++)
+        {
+            // GRB
+            pixels.setPixelColor(i, pixels.Color(colorR, colorG, colorB));
+        }
+        pixels.show();
     }
-    pixels.show();
+    else
+    {
+        BLINKER_LOG("wsState: ", wsState);
+        pixels.clear();
+
+        // after emptying the lights, you need to use the show function to update
+        pixels.show();
+    }
 }
 
 uint32_t getColor()
